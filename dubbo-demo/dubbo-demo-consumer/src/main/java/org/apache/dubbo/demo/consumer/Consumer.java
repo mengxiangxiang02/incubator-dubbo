@@ -18,6 +18,7 @@ package org.apache.dubbo.demo.consumer;
 
 import org.apache.dubbo.demo.DemoService;
 
+import org.apache.dubbo.rpc.service.EchoService;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 public class Consumer {
@@ -31,11 +32,16 @@ public class Consumer {
         ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(new String[]{"META-INF/spring/dubbo-demo-consumer.xml"});
         context.start();
         DemoService demoService = (DemoService) context.getBean("demoService"); // get remote service proxy
+
+        //回声测试用于检测服务是否可用，回声测试按照正常请求流程执行，能够测试整个调用是否通畅，可用于监控。
+        EchoService echoService = (EchoService) demoService; // 强制转型为EchoService
+        Object ok = echoService.$echo("OK");
+        System.err.println("OK"+ok);
         while (true) {
             try {
-                Thread.sleep(1000);
                 String hello = demoService.sayHello("world"); // call remote method
-                System.out.println(hello); // get result
+                System.err.println(hello); // get result
+                Thread.sleep(1000);
             } catch (Throwable throwable) {
                 throwable.printStackTrace();
             }

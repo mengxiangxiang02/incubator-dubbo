@@ -22,19 +22,51 @@
        http://dubbo.apache.org/schema/dubbo http://dubbo.apache.org/schema/dubbo/dubbo.xsd">
 
     <!-- provider's application name, used for tracing dependency relationship -->
+    <!--用于配置当前应用信息，不管该应用是提供者还是消费者-->
     <dubbo:application name="demo-provider"/>
 
-
-    <!--zookeeper-->
-    <dubbo:registry address="multicast://224.5.6.7:1234" />
+    <!--用于配置连接注册中心相关信息-->
+    <dubbo:registry address="zookeeper://10.132.97.66:2181?backup=10.132.97.73:2181" />
 
     <!-- use dubbo protocol to export service on port 20880 -->
-    <dubbo:protocol name="dubbo" port="-1"/>
+    <!-- 用dubbo协议在20880端口暴露服务 最大接收连接数1000-->
+    <!--用于配置提供服务的协议信息，协议由提供方指定，消费方被动接受-->
+    <dubbo:protocol name="dubbo" port="20880" accepts="1000"/>
+    <!--
+        Dispatcher
+        all 所有消息都派发到线程池，包括请求，响应，连接事件，断开事件，心跳等。
+        direct 所有消息都不派发到线程池，全部在 IO 线程上直接执行。
+        message 只有请求响应消息派发到线程池，其它连接断开事件，心跳等消息，直接在 IO 线程上执行。
+        execution 只请求消息派发到线程池，不含响应，响应和其它连接断开事件，心跳等消息，直接在 IO 线程上执行。
+        connection 在 IO 线程上，将连接断开事件放入队列，有序逐个执行，其它消息派发到线程池。
+        ThreadPool
+        fixed 固定大小线程池，启动时建立线程，不关闭，一直持有。(缺省)
+        cached 缓存线程池，空闲一分钟自动删除，需要时重建。
+        limited 可伸缩线程池，但池中的线程数只会增长不会收缩。只增长不收缩的目的是为了避免收缩时突然来了大流量引起的性能问题。
+        eager 优先创建Worker线程池。在任务数量大于corePoolSize但是小于maximumPoolSize时，优先创建Worker来处理任务。
+        当任务数量大于maximumPoolSize时，将任务放入阻塞队列中。阻塞队列充满时抛出RejectedExecutionException。(
+        相比于cached:cached在任务数量超过maximumPoolSize时直接抛出异常而不是将任务放入阻塞队列)-->
+   <!--<dubbo:protocol name="dubbo" dispatcher="all" threadpool="fixed" threads="100" />-->
+
+    <!--http://169.254.247.234:6061/org.apache.dubbo.demo.DemoService?wsdl-->
+    <dubbo:protocol name="webservice" port="6061" />
+
+    <dubbo:provider timeout="5000" />
 
     <!-- service implementation, as same as regular local bean -->
     <bean id="demoService" class="org.apache.dubbo.demo.provider.DemoServiceImpl"/>
 
-    <!-- declare the service interface to be exported -->
-    <dubbo:service interface="org.apache.dubbo.demo.DemoService" ref="demoService"/>
+    <!--
+    timeout 显示了配置的查找顺序，其它 retries, loadbalance, actives 等类似：方法级优先，接口级次之，全局配置再次之如果级别一样，则消费方优先，提供方次之
+    connections 定义一个注册者最多有两个连接，防止被连接数撑爆机器
+    使用多个协议暴露服务时  protocol="dubbo,webservice" 或者不填    填一个只暴露一个协议
+    当一个接口有多种实现时，可以用 group 区分。
+    当一个接口实现，出现不兼容升级时，可以用版本号过渡，版本号不同的服务相互间不引用。
+    <dubbo:service interface="com.foo.BarService" version="1.0.0" />
+    -->
+    <dubbo:service interface="org.apache.dubbo.demo.DemoService"  connections="2"  group="zfdemo" timeout="1000" ref="demoService"  protocol="dubbo,webservice" >
+        <dubbo:method name="sayHello" timeout="5000"/>
+    </dubbo:service>
+
 
 </beans>

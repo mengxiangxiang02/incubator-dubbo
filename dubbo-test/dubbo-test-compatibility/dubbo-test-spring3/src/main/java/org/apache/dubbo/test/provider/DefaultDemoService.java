@@ -19,6 +19,8 @@ package org.apache.dubbo.test.provider;
 import org.apache.dubbo.config.annotation.Service;
 import org.apache.dubbo.demo.DemoService;
 
+import javax.validation.constraints.NotNull;
+
 /**
  * Default {@link DemoService} implementation
  *
@@ -33,7 +35,7 @@ import org.apache.dubbo.demo.DemoService;
 public class DefaultDemoService implements DemoService {
 
     @Override
-    public String sayHello(String name) {
+    public String sayHello(@NotNull String name) {
         return "DefaultDemoService - sayHell() : " + name;
     }
 

@@ -21,12 +21,24 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.3.xsd
        http://dubbo.apache.org/schema/dubbo http://dubbo.apache.org/schema/dubbo/dubbo.xsd">
 
-    <dubbo:application name="demo-consumer"/>
+    <dubbo:application name="dubbo-consumer" />
 
-    <dubbo:registry address="zookeeper://127.0.0.1:2181"/>
+    <dubbo:registry address="zookeeper://10.132.97.66:2181?backup=10.132.97.73:2181" />
+
+    <!--禁用注册配置
+    <dubbo:registry address="zookeeper://10.132.97.66:2181?backup=10.132.97.73:2181" register="false"/>
+    -->
 
     <!-- generate proxy for the remote service, then demoService can be used in the same way as the
     local regular interface -->
-    <dubbo:reference id="demoService" check="false" interface="org.apache.dubbo.demo.DemoService"/>
+    <!--说明：只有相同group的才能进行匹配，若要实现消费者任意调用提供者的某个服务，只需要把group设置为“*”，
+        Dubbo 缺省会在启动时检查依赖的服务是否可用，不可用时会抛出异常，阻止 Spring 初始化完成，以便上线时，能及早发现问题，默认 check="true"。
+    -->
+    <!--负载均衡策略 Random LoadBalance随机，按权重设置随机概率
+        RoundRobin LoadBalance 轮询，按公约后的权重设置轮询比率
+        LeastActive LoadBalance 最少活跃调用数
+        ConsistentHash LoadBalance 一致性 Hash
+    -->
+    <dubbo:reference id="demoService"  loadbalance="roundrobin"  group="zfdemo" check="false" retries="2"  timeout="5000" interface="org.apache.dubbo.demo.DemoService" />
 
 </beans>
